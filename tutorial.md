@@ -44,7 +44,7 @@ a whole lot more arcane. Don't worry about that, it won't hamper your
 understanding of computers in any way.
 
 Once you can understand the above and how this sequence of simple *tokens* can
-work to make a computer *do stuff* you'll probably know more about this stuff
+work to make a computer *do things* you'll probably know more about this stuff
 than most *so-called* programmers.
 
 ### Side Effects
@@ -54,6 +54,17 @@ these individual instructions while the thing that is executing them does not.
 As far as the central processing unit (CPU) is concerned every cycle is the same 
 as every other cycle. But as things change around this unit the effects of the
 instructions it is performing have various consequences. 
+
+These changes to *state* (or things about our environment) as part of the
+operations are called *side effects*. And they are the most powerful tool in
+computing. Without side effects (and memory) computers would be basic just
+fancy calculators. But the ability to easily *remember* these effects and 
+remember them over time as well easily (used to be hard-disk but nowadays 
+usually cloud) gives a lot of power.
+
+On the other hand, side-effects are the **spawn of the devil**. They really are.
+If there's something that makes code completely unreasonable it would be
+side-effects. Oh, and `if` statements too but that's a topic for another post. 
 
 ### Tale of Two Morons
 A long long time ago there were two people and each had a baffling deficiency.
