@@ -43,6 +43,10 @@ architectures have specialized syntax. So real life assembly will usually look
 a whole lot more arcane. Don't worry about that, it won't hamper your
 understanding of computers in any way.
 
+Once you can understand the above and how this sequence of simple *tokens* can
+work to make a computer *do stuff* you'll probably know more about this stuff
+than most *so-called* programmers.
+
 ### Side Effects
 By the way, computers are so powerful because we can remember stuff between
 these individual instructions while the thing that is executing them does not.
