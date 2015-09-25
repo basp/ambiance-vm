@@ -10,6 +10,7 @@ const enum OpCode {
 	RET0,
 	CALL,
 	NOP,
+	SUSPEND,
 	EXTENDED,
 	OptimNumStart,
 	LastOpCode = 255

@@ -29,6 +29,20 @@ some *environment* for your instruction and then tell the processor to execute
 the instruction. And on the next *tick* it will read the instruction, then use
 the environment that you setup to execute it and go on to the next instruction.
 
+Assembly looks a bit like this (very simplified):
+
+	PUSH	2
+	PUSH	3
+	ADD
+	RET
+	
+You'll see why this is useful to know in a bit. Oh and you'll probably won't 
+seem assembly this understandable but that's because most real world assembly
+deals with register based machiens (out of scope) and most processor
+architectures have specialized syntax. So real life assembly will usually look
+a whole lot more arcane. Don't worry about that, it won't hamper your
+understanding of computers in any way.
+
 ### Side Effects
 By the way, computers are so powerful because we can remember stuff between
 these individual instructions while the thing that is executing them does not.
