@@ -88,16 +88,12 @@ function run(p: Program): any {
 }
 
 var builtin = {
-	notify: (...args: any[]) => {
-		switch(args.length) {
-			case 1:	
-				console.log(args[0]);
-				break;
-			default:
-				console.log(args);
-				break;
-		}
+	log: (args) => {
+		console.log(args);
 		return 0;
+	},
+	sum: (args) => {
+		return _.sum(args);
 	}
 };
 
@@ -126,9 +122,23 @@ call.main = [
 	OpCode.RET		
 ];
 call.literals = [
-	'notify',
-	'hello world'
+	'log',
+	['hello world']
 ];
 
-var r = run(call);
+var sum = new Program();
+sum.main = [
+	OpCode.IMM,
+	0,
+	OpCode.IMM,
+	1,
+	OpCode.CALL,
+	OpCode.RET
+];
+sum.literals = [
+	'sum',
+	[1, 2, 3, 4, 5]
+];
+
+var r = run(sum);
 console.log(r);
