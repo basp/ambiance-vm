@@ -5,6 +5,7 @@ import _ = require('lodash');
 const enum OpCode {
 	EQ, NE, GT, LT, GE, LE, IN,
 	ADD, MIN, MUL, DIV, MOD,
+	POP,
 	IMM,
 	RET,
 	RET0,
@@ -138,14 +139,20 @@ eq.literals = [
 
 var call_foo = new Program();
 call_foo.main = [
-	OpCode.IMM, 0,
+	OpCode.IMM, 0,		
 	OpCode.IMM, 1,
-	OpCode.CALL_BI,
+	OpCode.CALL_BI, 	// log
+	OpCode.POP,
 	OpCode.IMM, 2,
 	OpCode.IMM, 3,
 	OpCode.IMM, 4,
-	OpCode.CALL_VERB,
-	OpCode.RET0	
+	OpCode.CALL_VERB,	// foo
+	OpCode.POP,
+	OpCode.IMM, 0,
+	OpCode.IMM, 1,
+	OpCode.CALL_BI,		// log
+	OpCode.POP,
+	OpCode.RET0
 ];
 call_foo.literals = [
 	'log',
@@ -186,11 +193,14 @@ function exec(f: Frame): any {
 				ans = _.includes(rhs, lhs);
 				f.stack.push(ans);
 				break;
+			case OpCode.POP:
+				f.stack.pop();
+				break;
 			case OpCode.RET:
 				ans = f.stack.pop();
 				return [ans, false];
 			case OpCode.RET0:
-				return [0, false];
+				return [0, f.prev];
 			case OpCode.CALL_BI:
 				args = f.stack.pop();
 				let fn = f.stack.pop();
@@ -198,6 +208,7 @@ function exec(f: Frame): any {
 				f.stack.push(ans);
 				break;
 			case OpCode.CALL_VERB:
+				f.ip += 1;
 				args = f.stack.pop();
 				let verb = f.stack.pop();
 				let objid = f.stack.pop();
@@ -215,7 +226,7 @@ function exec(f: Frame): any {
 	}
 }
 
-function run(p: Program) {
+function run(p: Program): any {
 	let top = new Frame(p, 'MAIN');
 	while(top) {
 		let [r, cont] = exec(top);
@@ -223,5 +234,13 @@ function run(p: Program) {
 		if (cont) {
 			top.stack.push(r);
 		}
-	} 
+		else {
+			return r;
+		}
+	}
+	
+	throw new Error('No RET/RET0 in program'); 
 }
+
+let r = run(call_foo);
+console.log(r);
