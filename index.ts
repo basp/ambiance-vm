@@ -17,33 +17,28 @@ const enum OpCode {
 	LastOpCode = 255
 }
 
-const OptimNumLo = -10;
-const OptimNumHi = OpCode.LastOpCode - OpCode.OptimNumStart + OptimNumLo;
+const OptimNumLow = -10;
+const OptimNumHi = OpCode.LastOpCode - OpCode.OptimNumStart + OptimNumLow;
 
 function isOptimNumOpCode(o: OpCode): boolean {
 	return o >= OpCode.OptimNumStart;
 }
 
 function opCodeToOptimNum(o: OpCode): number {
-	return o - OpCode.OptimNumStart + OptimNumLo;
+	return o - OpCode.OptimNumStart + OptimNumLow;
 }
 
 function optimNumToOpCode(i: number): OpCode {
-	return OpCode.OptimNumStart + i - OptimNumLo;
+	return OpCode.OptimNumStart + i - OptimNumLow;
 }
 
 function inOptimNumRange(i: number): boolean {
-	return i >= OptimNumLo && i <= OptimNumHi;
+	return i >= OptimNumLow && i <= OptimNumHi;
 }
 
 class Program {
 	literals: any[];
 	main: OpCode[];
-}
-
-class Frame {
-	stack: any[];
-	prev: Frame;
 }
 
 class Foo extends Program {
@@ -65,67 +60,20 @@ var objects = {
 		'foo': new Foo()
 	}	
 };
+
+class Frame {
+	ip = 0;
+	stack = [];
 	
-function run(p: Program): any {
-	var lhs, rhs, ans, args;
-	let stack = [];
-	let ip = 0;
-	while(true) {
-		let op = p.main[ip];
-		switch(op) {
-			case OpCode.NOP:
-				break;
-			case OpCode.IMM:
-				ip += 1;
-				let slot = p.main[ip];
-				ans = p.literals[slot];
-				stack.push(ans);
-				break;
-			case OpCode.EQ:
-				rhs = stack.pop();
-				lhs = stack.pop();
-				ans = _.eq(lhs, rhs);
-				stack.push(ans);
-				break;
-			case OpCode.NE:
-				rhs = stack.pop();
-				lhs = stack.pop();
-				ans = !_.eq(lhs, rhs);
-				stack.push(ans);
-				break;
-			case OpCode.IN:
-				rhs = stack.pop();
-				lhs = stack.pop();
-				ans = _.includes(rhs, lhs);
-				stack.push(ans);
-				break;
-			case OpCode.RET:
-				return stack.pop();
-			case OpCode.RET0:
-				return 0;
-			case OpCode.CALL_BI:
-				args = stack.pop();
-				let fn = stack.pop();
-				ans = builtin[fn](args);
-				stack.push(ans);
-				break;
-			case OpCode.CALL_VERB:
-				args = stack.pop();
-				let verb = stack.pop();
-				let objid = stack.pop();
-				ans = run(objects[objid][verb]);
-				stack.push(ans);
-				break;
-			default:
-				if (isOptimNumOpCode(op)) {
-					stack.push(opCodeToOptimNum(op));
-				}
-				else {
-					throw new Error(`Invalid OpCode: ${op}`);
-				}
-		}
-		ip += 1;
+	constructor(prog: Program, name?: string, prev?: Frame) {
+		this.prog = prog;
+		this.prev = prev;
+		this.name = name;
 	}
+	
+	name: string;
+	prog: Program;
+	prev: Frame;
 }
 
 var builtin = {
@@ -207,5 +155,73 @@ call_foo.literals = [
 	[]
 ];
 
-var r = run(call_foo);
-console.log(r);
+function exec(f: Frame): any {
+	var lhs, rhs, ans, args;
+	while(true) {
+		let op = f.prog.main[f.ip];
+		switch(op) {
+			case OpCode.NOP:
+				break;
+			case OpCode.IMM:
+				f.ip += 1;
+				let slot = f.prog.main[f.ip];
+				ans = f.prog.literals[slot];
+				f.stack.push(ans);
+				break;
+			case OpCode.EQ:
+				rhs = f.stack.pop();
+				lhs = f.stack.pop();
+				ans = _.eq(lhs, rhs);
+				f.stack.push(ans);
+				break;
+			case OpCode.NE:
+				rhs = f.stack.pop();
+				lhs = f.stack.pop();
+				ans = !_.eq(lhs, rhs);
+				f.stack.push(ans);
+				break;
+			case OpCode.IN:
+				rhs = f.stack.pop();
+				lhs = f.stack.pop();
+				ans = _.includes(rhs, lhs);
+				f.stack.push(ans);
+				break;
+			case OpCode.RET:
+				ans = f.stack.pop();
+				return [ans, false];
+			case OpCode.RET0:
+				return [0, false];
+			case OpCode.CALL_BI:
+				args = f.stack.pop();
+				let fn = f.stack.pop();
+				ans = builtin[fn](args);
+				f.stack.push(ans);
+				break;
+			case OpCode.CALL_VERB:
+				args = f.stack.pop();
+				let verb = f.stack.pop();
+				let objid = f.stack.pop();
+				let cont = new Frame(objects[objid][verb], verb, f);
+				return [0, cont];
+			default:
+				if (isOptimNumOpCode(op)) {
+					f.stack.push(opCodeToOptimNum(op));
+				}
+				else {
+					throw new Error(`Invalid OpCode: ${op}`);
+				}
+		}
+		f.ip += 1;
+	}
+}
+
+function run(p: Program) {
+	let top = new Frame(p, 'MAIN');
+	while(top) {
+		let [r, cont] = exec(top);
+		top = cont;
+		if (cont) {
+			top.stack.push(r);
+		}
+	} 
+}
