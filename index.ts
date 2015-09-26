@@ -8,7 +8,8 @@ const enum OpCode {
 	IMM,
 	RET,
 	RET0,
-	CALL,
+	CALL_BI, 
+	CALL_VERB,
 	NOP,
 	SUSPEND,
 	EXTENDED,
@@ -45,8 +46,28 @@ class Frame {
 	prev: Frame;
 }
 
+class Foo extends Program {
+	main = [
+		OpCode.IMM, 0,
+		OpCode.IMM, 1,
+		OpCode.CALL_BI,
+		OpCode.RET0
+	];
+	
+	literals = [
+		'log',
+		['hello from foo']			
+	];
+}
+
+var objects = {
+	'#1': {
+		'foo': new Foo()
+	}	
+};
+	
 function run(p: Program): any {
-	var lhs, rhs, ans;
+	var lhs, rhs, ans, args;
 	let stack = [];
 	let ip = 0;
 	while(true) {
@@ -60,6 +81,18 @@ function run(p: Program): any {
 				ans = p.literals[slot];
 				stack.push(ans);
 				break;
+			case OpCode.EQ:
+				rhs = stack.pop();
+				lhs = stack.pop();
+				ans = _.eq(lhs, rhs);
+				stack.push(ans);
+				break;
+			case OpCode.NE:
+				rhs = stack.pop();
+				lhs = stack.pop();
+				ans = !_.eq(lhs, rhs);
+				stack.push(ans);
+				break;
 			case OpCode.IN:
 				rhs = stack.pop();
 				lhs = stack.pop();
@@ -70,10 +103,17 @@ function run(p: Program): any {
 				return stack.pop();
 			case OpCode.RET0:
 				return 0;
-			case OpCode.CALL:
-				rhs = stack.pop();
-				lhs = stack.pop();
-				ans = builtin[lhs](rhs);
+			case OpCode.CALL_BI:
+				args = stack.pop();
+				let fn = stack.pop();
+				ans = builtin[fn](args);
+				stack.push(ans);
+				break;
+			case OpCode.CALL_VERB:
+				args = stack.pop();
+				let verb = stack.pop();
+				let objid = stack.pop();
+				ans = run(objects[objid][verb]);
 				stack.push(ans);
 				break;
 			default:
@@ -101,8 +141,7 @@ var builtin = {
 var _in = new Program(); 
 _in.main = [
 	optimNumToOpCode(2),
-	OpCode.IMM,
-	0,
+	OpCode.IMM,	0,
 	OpCode.NOP,
 	OpCode.NOP,
 	OpCode.NOP,	
@@ -113,27 +152,23 @@ _in.literals = [
 	'123'
 ];
 
-var call = new Program();
-call.main = [
-	OpCode.IMM,
-	0,
-	OpCode.IMM,
-	1,
-	OpCode.CALL,
+var log = new Program();
+log.main = [
+	OpCode.IMM,	0,
+	OpCode.IMM,	1,
+	OpCode.CALL_BI,
 	OpCode.RET		
 ];
-call.literals = [
+log.literals = [
 	'log',
 	['hello world']
 ];
 
 var sum = new Program();
 sum.main = [
-	OpCode.IMM,
-	0,
-	OpCode.IMM,
-	1,
-	OpCode.CALL,
+	OpCode.IMM,	0,
+	OpCode.IMM,	1,
+	OpCode.CALL_BI,
 	OpCode.RET
 ];
 sum.literals = [
@@ -141,5 +176,36 @@ sum.literals = [
 	[1, 2, 3, 4, 5]
 ];
 
-var r = run(sum);
+var eq = new Program();
+eq.main = [
+	OpCode.IMM,	0,
+	OpCode.IMM, 1,
+	OpCode.EQ,
+	OpCode.RET
+];
+eq.literals = [
+	[1,2,3,4],
+	[1,2,3,4]	
+];
+
+var call_foo = new Program();
+call_foo.main = [
+	OpCode.IMM, 0,
+	OpCode.IMM, 1,
+	OpCode.CALL_BI,
+	OpCode.IMM, 2,
+	OpCode.IMM, 3,
+	OpCode.IMM, 4,
+	OpCode.CALL_VERB,
+	OpCode.RET0	
+];
+call_foo.literals = [
+	'log',
+	['hello from call_foo'],
+	'#1',
+	'foo',
+	[]
+];
+
+var r = run(call_foo);
 console.log(r);

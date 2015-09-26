@@ -66,6 +66,36 @@ On the other hand, side-effects are the **spawn of the devil**. They really are.
 If there's something that makes code completely unreasonable it would be
 side-effects. Oh, and `if` statements too but that's a topic for another post. 
 
+### A Horrible Side Effect
+NOTE: This section is probably only interesting to software developers.
+
+Once, there was a class, it was called `Command` or something. It had a 
+`ConnectionString` property.
+
+This property looked more or less like this:
+
+	key: string; 	// Set by sub-class or outside source
+
+	get {
+		var env = HomeBrewnConfigApi.Get("someEnvValue");
+		var envKey = Config.Get("theKeyKey");
+	}
+	
+And then we encounter this:
+	
+	get(string key) {
+		var connStr = 
+			AssembleConnStringViaObscureAlgo().
+			AndGoToTheConfigFileAndDatabase();
+		if (someObscureLogic) {
+			use (someOtherObscureLogic) {
+				this.SomeTotallyDiffernet 
+				return andDoSomethingCompletelyDifferent();
+			}
+		}
+		return connStr;
+	}
+
 ### Tale of Two Morons
 A long long time ago there were two people and each had a baffling deficiency.
 CPUnit was able to calculate simple things but could remember only two things.
